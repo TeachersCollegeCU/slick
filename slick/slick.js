@@ -77,6 +77,10 @@
                 slidesPerRow: 1,
                 slidesToShow: 1,
                 slidesToScroll: 1,
+                // TC Starts
+                smoothSliding: false,
+                smoothSlidingSpeed: 10,
+                // TC Ends
                 speed: 500,
                 swipe: true,
                 swipeToSlide: false,
@@ -325,7 +329,12 @@
                         _.disableTransition();
 
                         callback.call();
-                    }, _.options.speed);
+                        // TC Starts
+                    }, _.options.smoothSliding === true ?
+                        _.options.smoothSlidingSpeed * (
+                            $(_.$slides[_.currentSlide > 0 ? _.currentSlide - 1 : _.slideCount - 1]).width()
+                        ) : _.options.speed);
+                    // TC Ends
                 }
 
             }
@@ -368,11 +377,17 @@
         var _ = this,
             transition = {};
 
+        // TC Starts
         if (_.options.fade === false) {
-            transition[_.transitionType] = _.transformType + ' ' + _.options.speed + 'ms ' + _.options.cssEase;
+            transition[_.transitionType] = _.transformType + ' ' +
+                (_.options.smoothSliding === true
+                    ? _.options.smoothSlidingSpeed * $(_.$slides[_.currentSlide > 0 ? _.currentSlide - 1 : _.slideCount - 1]).width()
+                    : _.options.speed) +
+                'ms ' + _.options.cssEase;
         } else {
             transition[_.transitionType] = 'opacity ' + _.options.speed + 'ms ' + _.options.cssEase;
         }
+        // TC Ends
 
         if (_.options.fade === false) {
             _.$slideTrack.css(transition);
@@ -1019,7 +1034,7 @@
             .off('focus.slick blur.slick')
             .on(
                 'focus.slick',
-                '*', 
+                '*',
                 function(event) {
                     var $sf = $(this);
 
@@ -1034,7 +1049,7 @@
                 }
             ).on(
                 'blur.slick',
-                '*', 
+                '*',
                 function(event) {
                     var $sf = $(this);
 
@@ -2366,6 +2381,30 @@
                 }
 
             }
+            // TC Starts
+            else {
+                // Bug encountered when hitting edges
+                // centerOffset = 1, evenCoef = 0 // slidesToShow: 3
+                // centerOffset = 2, evenCoef = 0 // slidesToShow: 5
+                // 0    1   2   3   4   5   6   7   8   9
+                if (index >= centerOffset && index <= (_.slideCount - 1) - centerOffset) { // middle
+                    _.$slides
+                        .slice(index - centerOffset + evenCoef, index + centerOffset + 1)
+                        .addClass('slick-active')
+                        .attr('aria-hidden', 'false');
+                } else if (index < centerOffset) { // hit start edge
+                    _.$slides
+                        .slice(0, index + centerOffset + 1)
+                        .addClass('slick-active')
+                        .attr('aria-hidden', 'false');
+                } else { // hit end edge
+                    _.$slides
+                        .slice(index - centerOffset, _.slideCount)
+                        .addClass('slick-active')
+                        .attr('aria-hidden', 'false');
+                }
+            }
+            // TC Ends
 
             _.$slides
                 .eq(index)
